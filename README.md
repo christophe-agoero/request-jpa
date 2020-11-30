@@ -6,6 +6,7 @@ L'implémentation de JPA est hibernate mais aucun spécifique hibernate n'est ut
 Le projet se focalise uniquement sur les requêtes de sélection.  
 Le choix de la méthode n'est pas forcément aisé tant il en existe, dans ce projet
 on se focalise sur les notions suivantes pour faire son choix :
+
 - Simplicité à implémenter et réutilisabilité
 - Graphe
 - Projection
@@ -15,12 +16,13 @@ Certains problèmes interviennent après la requête dans la phase de manipulati
 La manière d'écrire l'entité joue un rôle sur la manière dont la requête est générée donc une partie y est aussi consacrée.  
 
 ## Graphe
-En JPA la requête va manipuler une entitée de départ (root) et éventuellement des entitées en jointures.  
+En JPA la requête va manipuler une entitée de départ (root) et éventuellement des entités en jointures.  
 Si seul l'entité root est à retourner alors il n'y a pas de graphe.  
 Attention seule la partie à retourner est à prendre en compte, si des jointures sont nécéssaires uniquement pour la clause where cela n'entraine pas un graphe.  
 
 ## Projection
-En JPA il existe plusieurs types de projection : 
+En JPA il existe plusieurs types de projection :
+
 - Scalar : retourne un résultat non typé
 - DTO : un résultat typé contenant certains champs d'une entité (ou de plusieurs si graphe)
 - Entities : retourne un résultat de type entité
@@ -147,6 +149,7 @@ Il ne faut pas non plus passer d'un LazyInitialisationException à un N + 1 en a
 
 ## Concept de requête efficace
 A partir des quatre notions évoquées en intoduction et explicitées dans les paragraphes précédent et aussi des problèmes JPA on peut en déduire ce qu'est une requête efficace :
+
 - Pas de N + 1 ou de LazyInitialisationException à l'utilisation du résultat
 - Chargement du graphe demandé et pas de jointure supplémentaire qui dégrade la performance
 - Projection entities à part si gain de performance important avec la projection DTO en accord avec la notion de simplicité/réutilisabilité
@@ -156,40 +159,50 @@ A partir des quatre notions évoquées en intoduction et explicitées dans les p
 Ce paragraphe peut être à lui seul une documentation complète, on évoque seulement le minimal et notemment la partie en lien avec la génération de requête.  
 Générer en automatique depuis la base donne une base de travail (cas du database first).
 
-**CheckList**  
-- Annotation JPA
-    - Pour la classe  
-      ```java
-      @Entity
-      @Table(name = "table_nom")
-      ```
-    - Pour la clé primaire
-      ```java
-      @Id
-      @Column(name = "colonne_nom", unique = true, nullable = false)
-      ```
-    - Pour les clés étrangères
-    ```java
-      // de base on force tout à LAZY il faut le préciser car par défaut ManyToOne et OneToOne sont en EAGER
-      @OneToOne(fetch = FetchType.LAZY) 
-      @ManyToOne(fetch = FetchType.LAZY)
-      @OneToMany(fetch = FetchType.LAZY, mappedBy = "...")
-      @ManyToMany(fetch = FetchType.LAZY, mappedBy = "...")
-    ```
-    - Pour les autres champs
-      ```java
-      @Basic
-      @Column(name = "colonne_nom")
-      ```
-- Annotation lombok sur la classe
-  ```java
-  @Getter
-  @Setter
-  // dans le @ToString on exclus tous les attributs LAZY
-  @ToString(exclude = {"attributLAZY_1", "attributLAZY_2", ...,"attributLAZY_N"})
-  ```
+**CheckList :**  
 
-Si besoin d'un tutoriel lombok c'est [ici][tuto-lombok] , sinon générer via l'IDE les getter/setter et le toString (sans les attributs en LAZY).  
+- Annotation JPA
+    - Pour la classe
+	
+	```java
+	@Entity
+	@Table(name = "table_nom")
+	```
+	  
+    - Pour la clé primaire
+	
+    ```java
+    @Id
+    @Column(name = "colonne_nom", unique = true, nullable = false)
+    ```
+	  
+    - Pour les clés étrangères
+	
+    ```java
+    // de base on force tout à LAZY il faut le préciser car par défaut ManyToOne et OneToOne sont en EAGER
+    @OneToOne(fetch = FetchType.LAZY) 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "...")
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "...")
+    ```
+	
+    - Pour les autres champs
+	
+    ```java
+    @Basic
+    @Column(name = "colonne_nom")
+    ```
+	  
+- Annotation lombok sur la classe
+
+```java
+@Getter
+@Setter
+// dans le @ToString on exclus tous les attributs LAZY
+@ToString(exclude = {"attributLAZY_1", "attributLAZY_2", ...,"attributLAZY_N"})
+```
+
+Si besoin d'un tutoriel lombok c'est [ici](https://fxrobin.developpez.com/tutoriels/java/lombok-retour-experience/  "tuto lombok") , sinon générer via l'IDE les getter/setter et le toString (sans les attributs en LAZY).  
 
 _Astuce_ :  
 Si votre générateur met les annotations JPA sur les getter il faut lui renseigner un orm.xml pour lui préciser "access FIELD".    
@@ -209,7 +222,8 @@ Si votre générateur met les annotations JPA sur les getter il faut lui renseig
 </entity-mappings>
 ```
 
-Afin d'accéder aux attributs des entités on utilise hibernate-jpamodelgen.  
+Afin d'accéder aux attributs des entités on utilise hibernate-jpamodelgen.
+
 ```xml
 <!-- hibernate jpamodelgen -->
 <dependency>
@@ -221,9 +235,10 @@ Afin d'accéder aux attributs des entités on utilise hibernate-jpamodelgen.
 ## Modèle de données et graphe
 Pour présenter les différentes méthodes de requêtages on utilise le MPD suivant :
 
-![Custom](img/MPD.png) 
+![Custom](img/MPD.png "Modèle de données") 
 
-Ce modèle correspond à un projet de gestion de contrat : 
+Ce modèle correspond à un projet de gestion de contrat :
+
 - Un contrat à une liste de statut et une liste de version
 - Un contrat à une societe qui elle peut avoir plusieurs contrats
 - Une societé à deux personnes (président, avocat)
@@ -255,6 +270,7 @@ public class Contrat {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "contrat")
     private Set<ContratVersion> contratVersionSet;
 ```
+
 ```java
 @Entity
 @Table(name = "contrat_statut")
@@ -279,6 +295,7 @@ public class ContratStatut {
     private Contrat contrat;
 }
 ```
+
 ```java
 @Entity
 @Table(name = "contrat_version")
@@ -306,6 +323,7 @@ public class ContratVersion {
     private Contrat contrat;
 }
 ```
+
 ```java
 @Entity
 @Table(name = "societe")
@@ -337,6 +355,7 @@ public class Societe {
     private Set<Contrat> contratSet;
 }
 ```
+
 ```java
 @Entity
 @Table(name = "personne")
@@ -366,6 +385,7 @@ public class Personne {
     private Set<AdresseMail> adresseMailSet;
 }
 ```
+
 ```java
 @Entity
 @Table(name = "adresse_mail")
@@ -390,7 +410,7 @@ public class AdresseMail {
 
 Au niveau graphe cela donne le schéma suivant : 
 
-![Custom](img/graphe.png) 
+![Custom](img/graphe.png "graphe") 
 
 En pointillé se trouve les trois sous graphes qui donne le graphe complet à récupérer.  
 Ce graphe est utilisé par la suite pour différentes méthodes de requêtage.  
@@ -412,6 +432,7 @@ public interface ContratRepository extends JpaRepository<Contrat, Long>, JpaSpec
    // Décalartion des méthodes non custom
 }
 ```
+
 JpaRepository étend QueryByExampleExecutor et PagingAndSortingRepository qui étend CrudRepository.  
 Avec cette implémentation il y a déjà un bon nombre de méthodes à disposition ne nécessitant aucune implémentation.  
 Les autres méthodes qui sont custom car elles nécéssitent une impllémentation sont dans l'interface ContratCustomRepository.  
@@ -424,7 +445,7 @@ public interface ContratCustomRepository {
     // Décalartion des méthodes custom
 }
 ```
-    
+
 Une classe abstraite générique contenant deux autres méthodes est à disposition pour les repository custom.  
 
 ```java
@@ -461,7 +482,8 @@ public abstract class AbstractCustomRepository<T> {
 ``` 
 
 SubGraphUtil est une classe utilitaire servant à créer les graphes.
- 
+
+
 ```java
 /**
  * Classe utilitaire pour creer les graphes
@@ -497,6 +519,7 @@ La structure complète est en place.
 ## Méthodes de requêtage
 Pour les méthodes ne pouvant réaliser que des choses simple on précise le type de demande possible.  
 Pour les méthodes pouvant réaliser des choses complexes et afin de les comparer on utilise quatre demandes :
+
 - Graphe, projection entities
 - Graphe, projection entities, clause where statique
 - Graphe, projection DTO, clause where statique
@@ -504,7 +527,8 @@ Pour les méthodes pouvant réaliser des choses complexes et afin de les compare
 
 
 Le graphe commun est celui du paragraphe Modèle de données et graphe.  
-La clause where est un "AND" entre trois critères : 
+La clause where est un "AND" entre trois critères :
+
 - In sur l'identifiant contrat
 - Equal sur le booléen actif de contratVersion
 - EndWithIgnoreCase sur le libellé de l'adresse mail de l'avocat
@@ -552,14 +576,17 @@ public class ContratProjectionResult {
 ### CrudRepository query
 
 **Type de demande :**
+
 - Récupérer le contrat avec tous ses champs par son identifiant
 - Récupérer les contrats avec tous leurs champs
 
 
 **Avantages :**
+
 - Aucune implémentation
   
 **Inconvénients :**
+
 - Statique
 - Sans graphe
 - Projection entities sur la root uniquement
@@ -570,16 +597,19 @@ Des exemples sont présents dans le paragraphe Tests unitaires
 ### Derived  query
 
 **Type de demande :**
+
 - Récupérer les contrats avec tous leurs champs par l'identifiant societé
 - Récupérer les contrats avec tous leurs champs dont le nom de la société commence par
 - Récupérer les contrats avec les champs id,nom par l'identifiant societé
 - Récupérer les contrats avec le champ id par l'identifiant societé
 
 **Avantages :**
+
 - Pas d'implémentation, juste une déclaration (à part les DTO si projection DTO)
 - Projection DTO dynamique
   
 **Inconvénients :**
+
 - Statique
 - Sans graphe
 - Projection entities sur la root uniquement
@@ -616,36 +646,40 @@ public class IdResult {
     long id;
 }
 ```
+
 ### Example query
 
 **Type de demande :**
+
 - Récupérer les contrats selon le contrat en exemple
 
 **Avantages :**
+
 - Aucune implémentation
 - Dynamique
 - Nombreux matcher existant
   
 **Inconvénients :**
+
 - Sans graphe
 - Projection entities sur la root uniquement
 - Sans projection DTO  
 
-**Implémentation :**  
-Déclaration dans ContratRepository car non custom.
-
 ### JPQL query
 
 **Avantages :**
+
 - Graphe
 - Projection entities et DTO
 
 **Inconvénients :**
+
 - Dynamique possible mais à proscrire (illisible, inmaintenable)
 - Implémentation non réutilisable
 
 **Implémentation :**  
 Déclaration dans ContratCustomRepository car custom.
+
 ```java
 List<Contrat> findJPQLGraph();
 
@@ -727,7 +761,8 @@ public List<ContratProjectionResult> findJPQLGraphWhereProjection(List<Long> con
 }
 ```
 
-Une autre implémentation moins verbeuse est possible en utilisant @Query.  
+Une autre implémentation moins verbeuse est possible en utilisant @Query.
+
 ```java
  /**
   * Interface pour les methodes non custom du repository Contrat
@@ -745,7 +780,9 @@ Une autre implémentation moins verbeuse est possible en utilisant @Query.
          List<Contrat> findJPQLGraph();
  }
 ```
+
 Avec cette annotation plus besoin d'implémentation dans ContratCustomRepositoryImpl mais inconvénients :
+
 - Non respect des fragments car obligation de déclarer sur l'interface non custom
 - Plus de point d'arrêt possible
 - Aucun ajout de code possible
@@ -753,11 +790,13 @@ Avec cette annotation plus besoin d'implémentation dans ContratCustomRepository
 ### Criteria query
 
 **Avantages :**
+
 - Graphe
 - Projection entities et DTO
 - Dynamique
 
 **Inconvénients :**
+
 - Implémentation non réutilisable
 - Implémentation verbeuse
 
@@ -906,6 +945,7 @@ Un seul cas pour faire comprendre à quel point c'est plus verbeux.
 
 **Implémentation :**  
 Déclaration dans ContratCustomRepository car custom.
+
 ```java
 List<ContratProjectionResult> findNativeGraphWhereProjection(List<Long> contratIdList,
                                                              boolean contratVersionActif,
@@ -948,8 +988,10 @@ public List<ContratProjectionResult> findNativeGraphWhereProjection(List<Long> c
     return query.getResultList();
 }
 ```
+
 Ici l'implémentation doit ajouter du code pour le mapping car il n'y a pas d'équivalent au "criteriaBuilder.construct" ni au "SELECT NEW".  
-On déclare un mapping via la classe ContratProjectionMapping
+On déclare un mapping via la classe ContratProjectionMapping :
+
 ```java
 @MappedSuperclass
 @SqlResultSetMapping(
@@ -973,20 +1015,24 @@ public class ContratProjectionMapping {
 
 }
 ```
+
 Il est possible de déclarer le @SqlResultSetMapping directement sur l'entité mais c'est de la "pollution d'entité".  
 S’il y a trois Native query avec trois mappings différents l'entité est illisible.  
 _Astuce :_  
 Certains propose d'utiliser comme ici une classe à part mais utilise un @Entity ce qui apporte un lot d'inconvénients :
+
 - Déclaration obligatoire d'un champ identifiant avec son annotation @Id
 - Pose des problèmes au démarrage de l'application à cause du ddl-auto
 
 Si le ddl-auto est en validate, l'application ne démarre pas :
+
 ```
 Caused by: org.hibernate.tool.schema.spi.SchemaManagementException: 
 Schema-validation: missing table [contrat_projection_mapping]
-
 ```
+
 Si le ddl-auto est en update, hibernate créer la table en base (ou essaie selon les droits) :
+
 ```
 Hibernate: 
     
@@ -995,6 +1041,7 @@ Hibernate:
         primary key (id)
     )
 ```
+
 Avec @MappedSuperclass il n'y a pas de problème.  
 
 ### AbstractCustomRepository query
@@ -1009,6 +1056,7 @@ _Traduction libre  de la documentation de spring data JPA :_
 
 On peut voir ça comme une amélioration de l'API criteria en apportant la réutilisabilisation.  
 Pourtant en l'état il y a trois inconvénients :
+
 - Sans graphe
 - Sans critère sur une entité en jointure
 - Projection entities uniquement
@@ -1021,6 +1069,7 @@ La manière d'implémenter les prédicats décrite ci-après permet d'appeller A
 Autrement dit on peut faire toutes les requêtes avec projection entities en statique et en dynamique sans avoir à implémenter du nouveau code dans la couche repository. 
 
 **Avantages :**
+
 - Graphe
 - Dynamique
 - Pas d'implémentation dans ContratCustomRepositoryImpl
@@ -1028,6 +1077,7 @@ Autrement dit on peut faire toutes les requêtes avec projection entities en sta
 - Maintenable
 
 **Inconvénients :**
+
 - Implémentation des graphes et des spécifications mais réutilisable
 - Projection entities uniquement
 
@@ -1078,9 +1128,9 @@ public final class ContratGraph {
                 SocieteGraph.getAvocatMailGraph()));
         return subGraphSocPdtAvoMail;
     }
-
 }
 ```
+
 ```java
 /**
  * Classe de graphes pour Societe
@@ -1118,9 +1168,9 @@ public final class SocieteGraph {
         subGraphAvocat.setSubGraphUtilList(Collections.singletonList(subGraphAdresseMail));
         return subGraphAvocat;
     }
-
 }
 ```
+
 ```java
 /**
  * Classe de graphes pour Personne
@@ -1136,16 +1186,16 @@ public final class PersonGraph {
     public static SubGraphUtil getAdresseEmailGraph() {
         return new SubGraphUtil(Personne_.ADRESSE_MAIL_SET);
     }
-
 }
 ```
+
 Pour les sous graphes directs c'est très simple :
+
 - contrat vers contratVersion : correspond au sous graphe rouge
 - contrat vers sociéte
 - société vers personne (avocat)
 - société vers personne (président) : correspond au sous graphe vert
 - personne vers adresseMail
-
 
 Pour créer les autres sous graphes plus complexes on combine. 
 On peut implémenter la combinaison directement dans les classes de graphe pour réutilisation ou combiner dans la méthode juste avant l'appel à AbstractCustomRepository.
@@ -1193,9 +1243,9 @@ public final class SpecificationUtil {
                            .getName()
                            .equals(attributeName);
     }
-
 }
 ```
+
 La méthode initOrAndSpecification sert pour les requêtes dynamiques pas pour la déclaration des prédicats.  
 Classes de spécification : 
 
@@ -1235,9 +1285,9 @@ public final class ContratSpecification {
                     criteriaBuilder);
         };
     }
-
 }
 ```
+
 ```java
 /**
  * Classe de specification pour ContratVersion
@@ -1255,9 +1305,9 @@ public final class ContratVersionSpecification {
                                    final CriteriaBuilder criteriaBuilder) {
         return criteriaBuilder.equal(from.get(ContratVersion_.ACTIF), actif);
     }
-
 }
 ```
+
 ```java
 /**
  * Classe de specification pour AdresseMail
@@ -1276,7 +1326,6 @@ public final class AdresseMailSpecification {
         return criteriaBuilder.like(criteriaBuilder.upper(from.get(AdresseMail_.LIBELLE)),
                 "%" + suffixMail.toUpperCase());
     }
-
 }
 ```
 
@@ -1319,9 +1368,11 @@ private void assertGraph(List<Contrat> contratList) {
     );
 }
 ```
+
 Les tests unitaires utilisent une base H2 en mémoire créée au lancement depuis les entités et un jeu de données.
 
 Configuration :
+
 ```yaml
 # SPRING
 spring:
@@ -1343,7 +1394,9 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
     show-sql: true
 ```
+
 Jeu de données :
+
 ```sql
 -- personne
 INSERT INTO personne (id, nom, prenom, avocat, president)
@@ -1744,7 +1797,6 @@ class ContratRepositoryTest {
         assertGraph(contratList);
     }
 }
-
 ```
 
 ## Conclusion
@@ -1782,12 +1834,14 @@ dynamique
         avec projection 
             Criteria
 ```
+
 _Explication de l'arbre de décision :_  
 Dès qu'il est possible d'utiliser une méthode ou il n'y a aucune implémentation (JpaRepository, Derived) autant le faire.  
 Le choix est moins évident entre JPQL, Criteria et AbstractCustomRepository.   
 Comme la réutilisabilité est prioritaire AbstractCustomRepository si possible (pas de projection DTO).  
 JPQL n'est pas réutilisable et Criteria oui mais vraiment pas simplement.  
 En effet si on essaie de mutualiser Criteria bien que la clause where et le graphe soit identique on a :
+
 - Des Fetch uniquement s'il n'y a pas de clause where
 - Des Join uniquement s'il n'y a pas de graphe ou une projection DTO
 - Certains Fetch à caster en Join s'il y a graphe et clause where  
@@ -1795,6 +1849,7 @@ En effet si on essaie de mutualiser Criteria bien que la clause where et le grap
 Cela vient du fait que dans l'Api Criteria il y a une sorte de lien entre le graphe et la clause where.  
 En utilisant AbstractCustomRepository il n'y a pas ce lien c'est plus claire et surtout c'est facilement réutilisable.  
 Si on doit implémenter les demandes suivantes (toutes en projection entities) :
+
 - Récupérer les contrats avec critere identifiant In
 - Récupérer les contrats avec critere identifiant In, graphe contratVersion
 - Récupérer les contrats avec critere identifiant In, graphe societe
@@ -1805,18 +1860,17 @@ Si on doit implémenter les demandes suivantes (toutes en projection entities) :
 Il n'y a quasi aucun code à faire car les grahes de bases et les spécifications existent déjà et on peut tout combiner.  
 Un autre avantage et la séparation de concept entre le quoi et le comment.  
 La demande précise de récupérer un contrat avec contratVersion actif à true on utilise :
+
 ```
 ContratSpecification.getContratVersionActifEqual(CONTRAT_VERSION_ACTIF)
 ```
+
 On ne voit pas le Join entre contrat et contratVersion c'est mieux c'est un aspect technique pas fonctionnelle.  
 
 Pour les cas avec projection DTO difficile de donner une priorité entre JQPL et Crieria.  
 L'implémentation JPQL est plus rapide, plus concise mais l'API criteria est plus clair, plus maintenable.  
 Le choix peut aussi être guidé par le fait qu'on ne veut pas utiliser trop de techniques différentes dans un même projet ce qui complique la maintenance, la montée de compétence éventuelle des nouveaux etc.  
 Dans ce cas on utilise Criteria car c'est la seule qui peut tout faire :
+
 - AbstractCustomRepository : pas de projection DTO
 - JPQL : à proscrire pour le dynamique
-
-
-
-[tuto-lombok]: https://fxrobin.developpez.com/tutoriels/java/lombok-retour-experience/  "tuto lombok"
