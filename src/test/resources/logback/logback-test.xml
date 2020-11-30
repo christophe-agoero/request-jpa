@@ -1,0 +1,17 @@
+<included>
+  <!-- CERQUAL -->
+  <logger additivity="false" level="DEBUG" name="fr.agoero">
+    <appender-ref ref="CONSOLE"/>
+  </logger>
+  <!-- SPRING -->
+  <logger level="INFO" name="org.springframework"/>
+  <!--HIBERNATE -->
+  <logger additivity="false" name="org.hibernate.type">
+    <appender-ref ref="CONSOLE"/>
+    <level value="TRACE"/>
+  </logger>
+  <!-- ROOT -->
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</included>

@@ -1,0 +1,21 @@
+# SPRING
+spring:
+  # DATASOURCE
+  datasource:
+    url: jdbc:postgresql://localhost:5432/requete_jpa
+    username: postgres
+    password: postgres
+    hikari:
+      idle-timeout: 30000
+      minimum-idle: 2
+      maximum-pool-size: 5
+  # JPA
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+# LOGGING
+logging:
+  file:
+    name: /var/log/agoero/requete-jpa-dev.log

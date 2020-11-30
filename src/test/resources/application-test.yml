@@ -1,0 +1,19 @@
+# SPRING
+spring:
+  # DATASOURCE
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+  #JPA
+  jpa:
+    database: h2
+    hibernate:
+      use-new-id-generator-mappings: true
+      ddl-auto: create
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: true

@@ -1,0 +1,13 @@
+package fr.agoero;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+
+@SpringBootApplication
+public class RequeteJPAApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(RequeteJPAApplication.class, args);
+    }
+}
