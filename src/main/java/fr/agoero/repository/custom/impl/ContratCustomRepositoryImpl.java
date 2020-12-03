@@ -239,7 +239,7 @@ public class ContratCustomRepositoryImpl extends AbstractCustomRepository<Contra
                         + "JOIN personne a ON s.fk_personne_avocat_id = a.id "
                         + "JOIN adresse_mail am ON a.id = am.fk_personne_id "
                         // where
-                        + "WHERE c.id IN (:contratIdList) AND cv.actif IS TRUE "
+                        + "WHERE c.id IN (:contratIdList) "
                         + "AND cv.actif = :contratVersionActif "
                         + "AND UPPER(am.libelle)  LIKE :suffixMail",
                 "ContratProjectionMapping");

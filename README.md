@@ -479,10 +479,9 @@ public abstract class AbstractCustomRepository<T> {
         //...
     }
 }
-``` 
+```
 
 SubGraphUtil est une classe utilitaire servant à créer les graphes.
-
 
 ```java
 /**
@@ -978,7 +977,7 @@ public List<ContratProjectionResult> findNativeGraphWhereProjection(List<Long> c
                     + "JOIN personne a ON s.fk_personne_avocat_id = a.id "
                     + "JOIN adresse_mail am ON a.id = am.fk_personne_id "
                     // where
-                    + "WHERE c.id IN (:contratIdList) AND cv.actif IS TRUE "
+                    + "WHERE c.id IN (:contratIdList) "
                     + "AND cv.actif = :contratVersionActif "
                     + "AND UPPER(am.libelle)  LIKE :suffixMail",
             "ContratProjectionMapping");
