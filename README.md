@@ -534,7 +534,7 @@ La clause where est un "AND" entre trois critères :
 
 L'objet commun ContratCriteria pour clause where dynamique comporte les trois mêmes attributs que ceux de la clause where statique : 
 
-Pour les méthodes des exemples sont présents dans le paragraphe Tests unitaires.
+Pour toutes les méthodes des exemples sont présents dans le paragraphe Tests unitaires.
 
 ```java
 @Data
