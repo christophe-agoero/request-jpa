@@ -42,7 +42,7 @@ Récupérer un liste de personne avec sa liste d'adresse mail provenant de la ta
 L'objet à retourner doit être de la forme Objet(long id,String nom, List<String> libelleList).  
 Seul les champs identifiant et nom de la personne, libellé de l'adresse sont obligatoires.  
 Dans ce cas on crée un premier objet DTO de type Objet(long id,String nom, String libelle) correspondant directement à une ligne de résultat.  
-Ensuite on, créer l'objet correpondant à la demande et enfin on crée un mapper pour transformer la liste d'objet résultat en liste d'objet de la demande.  
+Ensuite on crée l'objet correpondant à la demande et enfin on crée un mapper pour transformer la liste d'objet résultat en liste d'objet de la demande.  
 La projection DTO peut donc coûter cher en termes d'implémentation et de maintenance.
 
 DTO est un terme générique et il se trouve qu'on l'utilise aussi dans la couche controller dans le cas de REST, pour cette raison les DTO correspondant à un résultat de requêtes sont suffixés non pas par DTO mais par Result.  
@@ -420,7 +420,7 @@ L'implémentation se base sur les fragments (recommandation spring data JPA).
 L'interface de repository qui étend tous les fragments est une composition de repository.  
 L'interface de repository a accès à toutes les méthodes des fragments.  
 L'interface de repository peut déclarer des méthodes supplémentaires.  
-Une méthode déclarée dans cette interace est noncustom, elle ne nécéssite pas d'implémentation.
+Une méthode déclarée dans cette interace est non custom, elle ne nécéssite pas d'implémentation.
 
 ```java
 /**
@@ -534,6 +534,8 @@ La clause where est un "AND" entre trois critères :
 
 L'objet commun ContratCriteria pour clause where dynamique comporte les trois mêmes attributs que ceux de la clause where statique : 
 
+Pour les méthodes des exemples sont présents dans le paragraphe Tests unitaires.
+
 ```java
 @Data
 @Builder
@@ -590,8 +592,6 @@ public class ContratProjectionResult {
 - Sans graphe
 - Projection entities sur la root uniquement
 - Sans projection DTO
-
-Des exemples sont présents dans le paragraphe Tests unitaires
 
 ### Derived  query
 
@@ -1030,7 +1030,7 @@ Caused by: org.hibernate.tool.schema.spi.SchemaManagementException:
 Schema-validation: missing table [contrat_projection_mapping]
 ```
 
-Si le ddl-auto est en update, hibernate créer la table en base (ou essaie selon les droits) :
+Si le ddl-auto est en update, hibernate crée la table en base (ou essaie selon les droits) :
 
 ```
 Hibernate: 
@@ -1808,12 +1808,12 @@ Sinon ci-dessous un arbre de décision possible :
 ```
 statique     
         sans graphe
-                sans projection
+                projection entities
                         critère simple
                             JpaRepository si méthode présente ou Derived
                         critère complexe
                             JpaSpecificationExecutor
-                avec projection 
+                projection DTO
                         projection sur l'entité root uniquement
                                 critère simple
                                     Derived 
@@ -1823,15 +1823,15 @@ statique
                             Attention pas Derived car (N+1)
                             JPQL/Criteria 
         avec graphe
-                sans projection
+                projection entities
                     AbstractCustomRepository
-                avec projection 
+                projection DTO
                     JPQL/Criteria
 dynamique 
-        sans projection
-            AbstractCustomRepository
-        avec projection 
-            Criteria
+        projection entities
+                AbstractCustomRepository
+        projection DTO 
+                Criteria
 ```
 
 _Explication de l'arbre de décision :_  
