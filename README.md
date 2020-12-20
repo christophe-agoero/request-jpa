@@ -1,19 +1,27 @@
-# REQUETE JPA
-
-## Introduction
-Ce projet a pour but de présenter des méthodes (non exhaustif) pour faire du requêtage JPA avec Spring Data JPA.  
-L'implémentation de JPA est hibernate mais aucun spécifique hibernate n'est utilisé.  
+# Synopsis
+La Java Persistence API (abrégée en JPA), est une interface de programmation Java permettant aux développeurs d'organiser des données relationnelles dans des applications utilisant la plateforme Java.  
+La Java Persistence API repose essentiellement sur l'utilisation des annotations, introduites dans Java 5. Elles permettent de définir facilement des objets métier, qui pourront servir d'interface entre la base de données et l'application, dans le cadre d'un mapping objet-relationnel.  
+Il est possible de faire du requêtage par plusieurs méthodes.  
+Ce projet a pour but de présenter des méthodes (non exhaustif) en précisant leurs cas d'utilisations, les avantages et inconvénients.  
+Ce projet utilise Spring Data JPA qui falicite le développement d'applications JPA.  
+L'implémentation de JPA choisie est hibernate.  
 Le projet se focalise uniquement sur les requêtes de sélection.  
-Le choix de la méthode n'est pas forcément aisé tant il en existe, dans ce projet
-on se focalise sur les notions suivantes pour faire son choix :
+Le premier chapitre aborde des notions essentielles pour comprendre JPA (graphe, projection, statique/dynamique, problèmes) permettant de définir le concept de requête efficace.  
+Les chapitres suivants montrent l'implémentation nécéssaire (entités, repository, méthodes de requêtage) d'un projet d'exemple.  
+Le chapitre tests unitaires montre l'implémentation des appels et sert aussi à vérifier la conformité par rapport au concept de requête efficace.  
+Dans la conclusion se trouve un arbre de décision servant à choisir la meilleure méthode selon le cas d'utilisation.
+
+# Notions
+On se focalise sur les notions suivantes pour faire le choix de la méthode :
 
 - Simplicité à implémenter et réutilisabilité
 - Graphe
 - Projection
 - Statique ou dynamique
+- Problèmes JPA
 
-Certains problèmes interviennent après la requête dans la phase de manipulation du résultat. Ces problèmes sont présentés par la suite.  
-La manière d'écrire l'entité joue un rôle sur la manière dont la requête est générée donc une partie y est aussi consacrée.  
+Ces notions (hormis la première qui est basique)  sont présentées par la suite.    
+Tout ceci permet d'arriver à formuler le concept de requête efficace.  
 
 ## Graphe
 En JPA la requête va manipuler une entitée de départ (root) et éventuellement des entités en jointures.  
@@ -34,7 +42,7 @@ La projection DTO a pour principal avantage de ne pas avoir à récupérer tous 
 Elle nécéssite de créer un Objet (le DTO) qui correspond au résultat de la requête.  
 Elle est à utiliser dans le cas read only uniquement (difficile d'appeler un save sur l'entité par la suite).  
 Elle est plus performante que la projection entities surtout dans le cas ou le nombre de lignes retournées est très grand ou encore dans le cas ou il y a des champs de type LOB à ne pas retourner.  
-Elle évite les problèmes de LazyInitialisationException et de N + 1 (abordés par la suite).  
+Elle évite les problèmes de `LazyInitializationException` et de N + 1 (abordés par la suite).  
 Elle nécéssite s'il y a graphe un autre Objet et un mapper voir exemple ci-après.  
 
 _Exemple :_  
@@ -75,12 +83,12 @@ L'aspect implémentation et réutilisabilité est plus important.
 
 ## Problèmes JPA
 
-### LazyInitialisationException et N + 1
+### LazyInitializationException et N + 1
 
-Ces deux problèmes interviennent pour une même cause l'appel d'une méthode sur une entité en jointure sans que le graphe ne soit chargé.  
-Si aucune connection avec la base n'est ouverte alors LazyInitialisationException sinon N + 1.  
+Ces deux problèmes interviennent dans la phase de manipulation du résultat et pour une même cause, l'appel d'une méthode sur une entité en jointure sans que le graphe ne soit chargé.  
+Si aucune connection avec la base n'est ouverte alors `LazyInitializationException` sinon N + 1.  
 Ci-dessous un extrait de l'entité Contrat et le service ContratService. ContratService n'est là que pour montrer un exmple des deux problèmes.  
-Les deux méthodes ont le même code, toute la subtilité réside dans l'annotation @Transcation qui garde une connection ouverte ce qui va produire un N + 1 à la place d'une LazyInitialisationException.
+Les deux méthodes ont le même code, toute la subtilité réside dans l'annotation `@Transactional` qui garde une connection ouverte ce qui va produire un N + 1 à la place d'une `LazyInitializationException`.
 
 ```java
 @Entity
@@ -126,7 +134,7 @@ public class ContratService {
 
 }
 ```
-On peut croire que le problème LazyInitialisationException est plus grave car il est bloquant mais en fait non car on le voit et on corrige.  
+On peut croire que le problème `LazyInitializationException` est plus grave car il est bloquant mais en fait non car on le voit et on corrige.  
 Le problème N + 1 est plus sournois, il est plus difficile à détecter car non bloquant. Si le jeu de données de tests est petit et que l'on n'a pas
 activé l'affichage des requêtes on ne va pas le voir. Une fois en production avec des données plus volumineuses c'est la catastrophe assurée en termes de performance.  
 N peut devenir énorme surout si comme dans cet exemple on enchaine plusieurs entités.
@@ -145,17 +153,17 @@ spring:
 ### Résolution
 Dans les deux cas il faut soit changer le graphe de la requête soit la réécrire en projection DTO.  
 Il ne faut pas mettre toutes les entités en jointure en fetch = FetchType.EAGER. Mettre tout en EAGER signifie qu'on va faire systématiquement la jointure donc ça va entraîner des problèmes de performance.  
-Il ne faut pas non plus passer d'un LazyInitialisationException à un N + 1 en ajoutant @Transactional.
+Il ne faut pas non plus passer d'un `LazyInitializationException` à un N + 1 en ajoutant `@Transactional`.
 
 ## Concept de requête efficace
-A partir des quatre notions évoquées en intoduction et explicitées dans les paragraphes précédent et aussi des problèmes JPA on peut en déduire ce qu'est une requête efficace :
+A partir des notions on peut en déduire ce qu'est une requête efficace :
 
-- Pas de N + 1 ou de LazyInitialisationException à l'utilisation du résultat
+- Pas de N + 1 ou de `LazyInitializationException` à l'utilisation du résultat
 - Chargement du graphe demandé et pas de jointure supplémentaire qui dégrade la performance
 - Projection entities à part si gain de performance important avec la projection DTO en accord avec la notion de simplicité/réutilisabilité
 
 
-## Implémenter une entité
+# Entités
 Ce paragraphe peut être à lui seul une documentation complète, on évoque seulement le minimal et notemment la partie en lien avec la génération de requête.  
 Générer en automatique depuis la base donne une base de travail (cas du database first).
 
@@ -243,6 +251,8 @@ Ce modèle correspond à un projet de gestion de contrat :
 - Un contrat à une societe qui elle peut avoir plusieurs contrats
 - Une societé à deux personnes (président, avocat)
 - Une personne à une liste d'adresse mail
+
+Ce MPD donne l'implémentation suivante :
 
 ```java
 @Entity
@@ -415,7 +425,7 @@ Au niveau graphe cela donne le schéma suivant :
 En pointillé se trouve les trois sous graphes qui donne le graphe complet à récupérer.  
 Ce graphe est utilisé par la suite pour différentes méthodes de requêtage.  
 
-## Structure de la couche repository
+# Repository
 L'implémentation se base sur les fragments (recommandation spring data JPA).  
 L'interface de repository qui étend tous les fragments est une composition de repository.  
 L'interface de repository a accès à toutes les méthodes des fragments.  
@@ -433,9 +443,9 @@ public interface ContratRepository extends JpaRepository<Contrat, Long>, JpaSpec
 }
 ```
 
-JpaRepository étend QueryByExampleExecutor et PagingAndSortingRepository qui étend CrudRepository.  
+`JpaRepository` étend `QueryByExampleExecutor` et `PagingAndSortingRepository` qui étend `CrudRepository`.  
 Avec cette implémentation il y a déjà un bon nombre de méthodes à disposition ne nécessitant aucune implémentation.  
-Les autres méthodes qui sont custom car elles nécéssitent une impllémentation sont dans l'interface ContratCustomRepository.  
+Les autres méthodes qui sont custom car elles nécéssitent une impllémentation sont dans l'interface `ContratCustomRepository`.  
 
 ```java
 /**
@@ -481,7 +491,7 @@ public abstract class AbstractCustomRepository<T> {
 }
 ```
 
-SubGraphUtil est une classe utilitaire servant à créer les graphes.
+`SubGraphUtil` est une classe utilitaire servant à créer les graphes.
 
 ```java
 /**
@@ -515,7 +525,7 @@ public class ContratCustomRepositoryImpl extends AbstractCustomRepository<Contra
 
 La structure complète est en place.
 
-## Méthodes de requêtage
+# Méthodes de requêtage
 Pour les méthodes ne pouvant réaliser que des choses simple on précise le type de demande possible.  
 Pour les méthodes pouvant réaliser des choses complexes et afin de les comparer on utilise quatre demandes :
 
@@ -574,7 +584,7 @@ public class ContratProjectionResult {
 
 Pour toutes les méthodes des exemples sont présents dans le paragraphe Tests unitaires.
 
-### CrudRepository query
+## CrudRepository query
 
 **Type de demande :**
 
@@ -593,7 +603,7 @@ Pour toutes les méthodes des exemples sont présents dans le paragraphe Tests u
 - Projection entities sur la root uniquement
 - Sans projection DTO
 
-### Derived  query
+## Derived query
 
 **Type de demande :**
 
@@ -614,10 +624,10 @@ Pour toutes les méthodes des exemples sont présents dans le paragraphe Tests u
 - Projection entities sur la root uniquement
 - Projection DTO sur la root uniquement (sinon génère du N + 1)
 
-Les demandes 3 et 4 sont traités par une même méthode gérant la projection DTO dynamique.  
+Les demandes 3 et 4 sont traitées par une même méthode gérant la projection DTO dynamique.  
 
 **Implémentation :**  
-Déclaration dans ContratRepository car non custom.
+Déclaration dans `ContratRepository` car non custom.
 
 ```java
 List<Contrat> findBySocieteId(long societeId);
@@ -627,7 +637,8 @@ List<Contrat> findBySocieteNomStartsWith(String prefixSociete);
 <T> List<T> findBySocieteId(long societeId, Class<T> type);
 ```
 
-Création des Classes correspondantes aux projections DTO. Spring data JPA propose l'utilisation de l'annotaion @Value de lombok. 
+Création des Classes correspondantes aux projections DTO. Spring data JPA propose l'utilisation de l'annotaion @Value de lombok.  
+A partir de JAVA 14 on peut utiliser un record.
 
 ```java
 @Value
@@ -646,7 +657,7 @@ public class IdResult {
 }
 ```
 
-### Example query
+## Example query
 
 **Type de demande :**
 
@@ -664,7 +675,7 @@ public class IdResult {
 - Projection entities sur la root uniquement
 - Sans projection DTO  
 
-### JPQL query
+## JPQL query
 
 **Avantages :**
 
@@ -677,7 +688,7 @@ public class IdResult {
 - Implémentation non réutilisable
 
 **Implémentation :**  
-Déclaration dans ContratCustomRepository car custom.
+Déclaration dans `ContratCustomRepository` car custom.
 
 ```java
 List<Contrat> findJPQLGraph();
@@ -690,7 +701,7 @@ List<ContratProjectionResult> findJPQLGraphWhereProjection(List<Long> contratIdL
                                                            String suffixMail);
 ```
 
-Implémentation dans ContratCustomRepositoryImpl
+Implémentation dans `ContratCustomRepositoryImpl`
 
 ```java
 @Override
@@ -760,7 +771,7 @@ public List<ContratProjectionResult> findJPQLGraphWhereProjection(List<Long> con
 }
 ```
 
-Une autre implémentation moins verbeuse est possible en utilisant @Query.
+Une autre implémentation moins verbeuse est possible en utilisant `@Query`.
 
 ```java
  /**
@@ -780,13 +791,13 @@ Une autre implémentation moins verbeuse est possible en utilisant @Query.
  }
 ```
 
-Avec cette annotation plus besoin d'implémentation dans ContratCustomRepositoryImpl mais inconvénients :
+Avec cette annotation plus besoin d'implémentation dans `ContratCustomRepositoryImpl` mais inconvénients :
 
 - Non respect des fragments car obligation de déclarer sur l'interface non custom
 - Plus de point d'arrêt possible
 - Aucun ajout de code possible
 
-### Criteria query
+## Criteria query
 
 **Avantages :**
 
@@ -800,7 +811,7 @@ Avec cette annotation plus besoin d'implémentation dans ContratCustomRepository
 - Implémentation verbeuse
 
 **Implémentation :**  
-Déclaration dans ContratCustomRepository car custom.
+Déclaration dans `ContratCustomRepository` car custom.
 
 ```java
 List<Contrat> findCriteriaGraph();
@@ -815,7 +826,7 @@ List<ContratProjectionResult> findCriteriaGraphWhereProjection(List<Long> contra
 List<Contrat> findCriteriaGraphWhereDynamic(ContratCriteria contratCriteria);
 ```
 
-Implémentation dans ContratCustomRepositoryImpl
+Implémentation dans `ContratCustomRepositoryImpl`
 
 ```java
 @Override
@@ -938,12 +949,12 @@ public List<Contrat> findCriteriaGraphWhereDynamic(ContratCriteria contratCriter
 }
 ```
 
-### Native query
+## Native query
 A éviter à part dans le cas ou la requête comporte quelque chose de spécifique à la base de donnée.  
 Un seul cas pour faire comprendre à quel point c'est plus verbeux.
 
 **Implémentation :**  
-Déclaration dans ContratCustomRepository car custom.
+Déclaration dans `ContratCustomRepository` car custom.
 
 ```java
 List<ContratProjectionResult> findNativeGraphWhereProjection(List<Long> contratIdList,
@@ -951,7 +962,7 @@ List<ContratProjectionResult> findNativeGraphWhereProjection(List<Long> contratI
                                                              String suffixMail);
 ```
 
-Implémentation dans ContratCustomRepositoryImpl
+Implémentation dans `ContratCustomRepositoryImpl`
 
 ```java
 @Override
@@ -1015,7 +1026,7 @@ public class ContratProjectionMapping {
 }
 ```
 
-Il est possible de déclarer le @SqlResultSetMapping directement sur l'entité mais c'est de la "pollution d'entité".  
+Il est possible de déclarer le `@SqlResultSetMapping` directement sur l'entité mais c'est de la "pollution d'entité".  
 S’il y a trois Native query avec trois mappings différents l'entité est illisible.  
 _Astuce :_  
 Certains propose d'utiliser comme ici une classe à part mais utilise un @Entity ce qui apporte un lot d'inconvénients :
@@ -1043,15 +1054,16 @@ Hibernate:
 
 Avec @MappedSuperclass il n'y a pas de problème.  
 
-### AbstractCustomRepository query
+## AbstractCustomRepository query
 
 Cette méthode de requêtage n'est pas classique c'est une amélioration de la méthode par spécification. 
 
 _Traduction libre  de la documentation de spring data JPA :_
+
 > JPA 2 introduit une API de critères que vous pouvez utiliser pour créer des requêtes dynamique.  
-  En écrivant un critère, vous définissez la clause where d'une requête.  
-  Les spécifications peuvent facilement être utilisées pour créer un ensemble extensible de prédicats sur une entité.  
-  Cet ensemble de prédicats peut ensuite être combiné et utilisé avec JpaRepository sans avoir besoin de déclarer une requête (méthode) pour chaque combinaison.
+> En écrivant un critère, vous définissez la clause where d'une requête.  
+> Les spécifications peuvent facilement être utilisées pour créer un ensemble extensible de prédicats sur une entité.  
+> Cet ensemble de prédicats peut ensuite être combiné et utilisé avec JpaRepository sans avoir besoin de déclarer une requête (méthode) pour chaque combinaison.
 
 On peut voir ça comme une amélioration de l'API criteria en apportant la réutilisabilisation.  
 Pourtant en l'état il y a trois inconvénients :
@@ -1061,17 +1073,17 @@ Pourtant en l'état il y a trois inconvénients :
 - Projection entities uniquement
 
 L'amélioration "répare" deux des trois inconvénients, seul l'aspect projection DTO reste infaisable en l'état.  
-Les deux méthodes de AbstractCustomRepository permettent de récupérer une entité ou une liste d'entités en choisissant le graphe et les critères.  
+Les deux méthodes de `AbstractCustomRepository` permettent de récupérer une entité ou une liste d'entités en choisissant le graphe et les critères.  
 On peut appeler avec une spécification nulle et dans ce cas seul la partie graphe est prise en compte.  
 Pas besoin d'implémenter le cas ou il y a spécification sans graphe car c'est ce que fait déjà JpaSpecificationExecutor.  
-La manière d'implémenter les prédicats décrite ci-après permet d'appeller AbstractCustomRepository ou directement JpaSpecificationExecutor.  
+La manière d'implémenter les prédicats décrite ci-après permet d'appeller `AbstractCustomRepository` ou directement `JpaSpecificationExecutor`.  
 Autrement dit on peut faire toutes les requêtes avec projection entities en statique et en dynamique sans avoir à implémenter du nouveau code dans la couche repository. 
 
 **Avantages :**
 
 - Graphe
 - Dynamique
-- Pas d'implémentation dans ContratCustomRepositoryImpl
+- Pas d'implémentation dans `ContratCustomRepositoryImpl`
 - Réutilisable
 - Maintenable
 
@@ -1081,7 +1093,7 @@ Autrement dit on peut faire toutes les requêtes avec projection entities en sta
 - Projection entities uniquement
 
 **Implémentation :**  
-Déclaration dans ContratCustomRepository car custom.
+Déclaration dans `ContratCustomRepository` car custom.
 
 ```java
 List<Contrat> findAllWithGraphAndSpecification(List<SubGraphUtil> subGraphUtilList,
@@ -1089,7 +1101,7 @@ List<Contrat> findAllWithGraphAndSpecification(List<SubGraphUtil> subGraphUtilLi
 ```
 
 **Implémentation partie graphe :**  
-Pour les graphes on se sert de l'utilitaire SubGraphUtil pour chaque entité.
+Pour les graphes on se sert de l'utilitaire `SubGraphUtil` pour chaque entité.
 
 ```java
 /**
@@ -1197,7 +1209,7 @@ Pour les sous graphes directs c'est très simple :
 - personne vers adresseMail
 
 Pour créer les autres sous graphes plus complexes on combine. 
-On peut implémenter la combinaison directement dans les classes de graphe pour réutilisation ou combiner dans la méthode juste avant l'appel à AbstractCustomRepository.
+On peut implémenter la combinaison directement dans les classes de graphe pour réutilisation ou combiner dans la méthode juste avant l'appel à `AbstractCustomRepository`.
 Pour montrer les deux options le graphe final n'est pas présent, il est uniquement présent dans la classe de test (voir paragraphe Tests unitaires).
 
 Pour obtenir le sous graphe bleu (getAvocatMailGraph) on ajoute "personne vers adresseMail" dans "société vers personne (avocat)".  
@@ -1328,12 +1340,12 @@ public final class AdresseMailSpecification {
 }
 ```
 
-## Tests unitaires
-Sert uniquement à vérifier le concept de requête efficace.  
+# Tests unitaires
+Sert à montrer comment appeller les méthodes de requêtage et à vérifier le concept de requête efficace.  
 Pour vérifier que la partie du graphe nécéssaire est chargé on appelle une méthode de type assertXLoad.  
-Le principe est que si le graphe est bien chargé alors pas de LazyInitializationException.   
+Le principe est que si le graphe est bien chargé alors pas de `LazyInitializationException`.   
 Pour vérifier qu'une partie du graphe n'est pas chargé inutilement on appelle une méthode de type assertXNotLoad.  
-Le principe est que si le graphe est chargé inutilement alors il faut une LazyInitializationException.  
+Le principe est que si le graphe est chargé inutilement alors il faut une `LazyInitializationException`.  
 
 _Assert pour le sous graphe société :_ 
 
@@ -1368,8 +1380,8 @@ private void assertGraph(List<Contrat> contratList) {
 }
 ```
 
-Les tests unitaires utilisent une base H2 en mémoire créée au lancement depuis les entités et un jeu de données.
-
+Les tests unitaires utilisent une base H2 en mémoire.
+Hibernate génère le MPD à partir des entités (ddl-auto: create).  
 Configuration :
 
 ```yaml
@@ -1394,7 +1406,15 @@ spring:
     show-sql: true
 ```
 
-Jeu de données :
+Spring Boot insère les données depuis un script sql.  
+_Traduction libre  de la documentation “How-to” Guides de Spring Boot :_
+
+> Spring Boot peut créer automatiquement le schéma (scripts DDL) de votre DataSource et l'initialiser (scripts DML).  
+> Il charge à partir des emplacements de chemin de classe racine standard : schema.sql et data.sql.
+
+La partie schéma est faite par hibernate il n'y a pas besoin d'un script schema.sql. 
+Reste à fournir un fichier data.sql pour les données.   
+Jeu de données src/test/resources/data.sql :
 
 ```sql
 -- personne
@@ -1798,78 +1818,17 @@ class ContratRepositoryTest {
 }
 ```
 
-## Conclusion
+# Conclusion
 Si certaines requêtes ne laissent pas le choix il y a souvent plusieurs méthodes possibles.  
-Alors comment faire pour choisir ?   
-Si la requête comporte quelque chose de spécifique à la base de donnée pas le choix Native query.  
-Si ça correspond bien à la demande Example query.  
-Sinon ci-dessous un arbre de décision possible :  
+Arbre de décision possible :  
 
-```
-statique     
-        sans graphe
-                projection entities
-                        critère simple
-                            JpaRepository si méthode présente ou Derived
-                        critère complexe
-                            JpaSpecificationExecutor
-                projection DTO
-                        projection sur l'entité root uniquement
-                                critère simple
-                                    Derived 
-                                critère complexe
-                                    JPQL/Criteria 
-                        projection multi-entités
-                            Attention pas Derived car (N+1)
-                            JPQL/Criteria 
-        avec graphe
-                projection entities
-                    AbstractCustomRepository
-                projection DTO
-                    JPQL/Criteria
-dynamique 
-        projection entities
-                AbstractCustomRepository
-        projection DTO 
-                Criteria
-```
+![Custom](img/arbre-decision.png "Arbre de décision") 
 
 _Explication de l'arbre de décision :_  
-Dès qu'il est possible d'utiliser une méthode ou il n'y a aucune implémentation (JpaRepository, Derived) autant le faire.  
-Le choix est moins évident entre JPQL, Criteria et AbstractCustomRepository.   
-Comme la réutilisabilité est prioritaire AbstractCustomRepository si possible (pas de projection DTO).  
-JPQL n'est pas réutilisable et Criteria oui mais vraiment pas simplement.  
-En effet si on essaie de mutualiser Criteria bien que la clause where et le graphe soit identique on a :
-
-- Des Fetch uniquement s'il n'y a pas de clause where
-- Des Join uniquement s'il n'y a pas de graphe ou une projection DTO
-- Certains Fetch à caster en Join s'il y a graphe et clause where  
-
-Cela vient du fait que dans l'Api Criteria il y a une sorte de lien entre le graphe et la clause where.  
-En utilisant AbstractCustomRepository il n'y a pas ce lien c'est plus claire et surtout c'est facilement réutilisable.  
-Si on doit implémenter les demandes suivantes (toutes en projection entities) :
-
-- Récupérer les contrats avec critere identifiant In
-- Récupérer les contrats avec critere identifiant In, graphe contratVersion
-- Récupérer les contrats avec critere identifiant In, graphe societe
-- Récupérer les contrats avec critere identifiant In, graphe societe + contraversion
-- Récupérer les contrats avec critere identifiant In et contratVersion actif, graphe societe + contraversion + personne
-- etc.
-
-Il n'y a quasi aucun code à faire car les grahes de bases et les spécifications existent déjà et on peut tout combiner.  
-Un autre avantage et la séparation de concept entre le quoi et le comment.  
-La demande précise de récupérer un contrat avec contratVersion actif à true on utilise :
-
-```
-ContratSpecification.getContratVersionActifEqual(CONTRAT_VERSION_ACTIF)
-```
-
-On ne voit pas le Join entre contrat et contratVersion c'est mieux c'est un aspect technique pas fonctionnelle.  
-
+Dès qu'il est possible d'utiliser une méthode ou il n'y a aucune implémentation (`JpaRepository`, Derived) autant le faire.    
+Comme la réutilisabilité est une notion importante `AbstractCustomRepository` est prioritaire sur JPQL/Criteria.  
+En effet avec `AbstractCustomRepository` il n'y a quasi aucun code à faire dans la couche repository,  il suffit de combiner.   
 Pour les cas avec projection DTO difficile de donner une priorité entre JQPL et Crieria.  
 L'implémentation JPQL est plus rapide, plus concise mais l'API criteria est plus clair, plus maintenable.  
-Le choix peut aussi être guidé par le fait qu'on ne veut pas utiliser trop de techniques différentes dans un même projet ce qui complique la maintenance, la montée de compétence éventuelle des nouveaux etc.  
-Dans ce cas on utilise Criteria car c'est la seule qui peut tout faire :
-
-- AbstractCustomRepository : pas de projection DTO
-- JPQL : à proscrire pour le dynamique
+Le choix peut aussi être guidé par le fait qu'on ne veut pas utiliser trop de techniques différentes dans un même projet ce qui complique la maintenance, la montée de compétence éventuelle des nouveaux développeurs, etc.    
+Dans ce cas on utilise Criteria car c'est la seule méthode qui peut tout faire.
